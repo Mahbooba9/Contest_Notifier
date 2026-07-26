@@ -110,7 +110,7 @@ This application is engineered for modern cloud hosting:
 ---
 
 ## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! 
+Contributions, issues, and feature requests are welcome!
 
 ## 📝 License
-This project is open-source and available under the [MIT License](LICENSE).
+This project is open-source.
