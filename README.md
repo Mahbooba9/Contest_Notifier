@@ -4,9 +4,18 @@ DevCompete is a full-stack MERN application designed to help developers stay upd
 
 The platform features a modern React dashboard for viewing live contest schedules and subscribing to alerts. A Node.js background worker runs daily cron jobs to fetch global contest data, filter upcoming events, and automatically dispatch beautifully formatted HTML email alerts to registered users.
 
-![DevCompete Dashboard Preview](https://i.imgur.com/example-dashboard-image.png) *(Note: Add a real screenshot link here later)*
-
 ---
+## Email 
+- The email send to user can be like this
+🔥 Upcoming Coding Contests (Next 24h)
+🟩 Weekly Contest 400 Platform: LeetCode Time: 27/07/2026, 8:00:00 AM
+
+🟦 Register Now
+
+
+🟩 Codeforces Round 950 (Div. 2) Platform: Codeforces Time: 27/07/2026, 8:05:00 PM
+
+🟦 Register Now
 
 ## ✨ Key Features
 
