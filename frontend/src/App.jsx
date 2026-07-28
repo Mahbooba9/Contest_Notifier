@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 
-const MOCK_DATA = [
-  { name: "Weekly Contest 400", site: "LeetCode", start_time: new Date(Date.now() + 86400000).toISOString(), url: "https://leetcode.com/contest/" },
-  { name: "Codeforces Round 950", site: "Codeforces", start_time: new Date(Date.now() + 172800000).toISOString(), url: "https://codeforces.com/contests" },
-  { name: "Starter 130", site: "CodeChef", start_time: new Date(Date.now() + 259200000).toISOString(), url: "https://www.codechef.com/contests" }
-];
+// MOCK_DATA removed as we now fetch real data from the backend
 
 function App() {
   const [data, setData] = useState([]);
@@ -19,21 +15,21 @@ function App() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    fetch('https://kontests.net/api/v1/all', { signal: controller.signal })
+    // Fetch from our own backend API instead of Kontests directly
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    fetch(`${apiUrl}/api/contests`, { signal: controller.signal })
       .then(res => res.json())
       .then(json => {
          clearTimeout(timeoutId);
-         const now = new Date();
-         const upcoming = json.filter(c => new Date(c.start_time) > now);
-         const sorted = upcoming.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+         // The backend already returns upcoming contests sorted, but we can double check
+         const sorted = json.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
          setData(sorted.slice(0, 12)); 
          setLoading(false);
       })
       .catch(err => {
           clearTimeout(timeoutId);
-          console.error("Kontests API failed. Loading fallback data.", err);
-          // If the API is down (which happens often with Kontests), use mock data
-          setData(MOCK_DATA);
+          console.error("Failed to fetch contests from backend.", err);
+          // Show error or empty state instead of fake data
           setLoading(false);
       });
   }, []);

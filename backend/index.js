@@ -71,6 +71,60 @@ app.post('/api/sub', async (req, res) => {
     }
 });
 
+// Helper function to fetch contests from Clist API
+async function getContests(days = 1) {
+    const username = process.env.CLIST_USERNAME;
+    const api_key = process.env.CLIST_API_KEY;
+    if (!username || !api_key) return [];
+
+    const now = new Date();
+    const end = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
+    
+    // Fetch from Clist.by API
+    const url = `https://clist.by/api/v4/contest/?username=${username}&api_key=${api_key}&start__gte=${now.toISOString()}&start__lte=${end.toISOString()}&order_by=start`;
+    
+    const res = await axios.get(url);
+    
+    // Filter for popular platforms to avoid spam/unknown contests
+    const popularSites = [
+        'codeforces.com',
+        'codechef.com',
+        'leetcode.com',
+        'atcoder.jp',
+        'hackerrank.com',
+        'geeksforgeeks.org',
+        'codingninjas.com'
+    ];
+
+    const filtered = res.data.objects.filter(c => 
+        popularSites.some(site => c.host.includes(site))
+    );
+
+    // Map to our expected format
+    return filtered.map(c => {
+        // Ensure valid date string (clist often omits the 'Z' for UTC)
+        const dateStr = c.start.endsWith('Z') ? c.start : c.start + 'Z';
+        return {
+            name: c.event,
+            site: c.host,
+            start_time: dateStr,
+            url: c.href
+        };
+    });
+}
+
+// 4.5 API Endpoint for Frontend to get contests
+app.get('/api/contests', async (req, res) => {
+    try {
+        // Fetch contests for the next 7 days to show on frontend
+        const contests = await getContests(7);
+        res.json(contests);
+    } catch (err) {
+        console.error("Failed to fetch contests for API:", err.message);
+        res.status(500).json({ err: "Failed to fetch contests" });
+    }
+});
+
 // 5. The Automation Engine
 async function runTask() {
     try {
@@ -82,23 +136,14 @@ async function runTask() {
         }
         const emails = users.map(u => u.email);
 
-        // Fetch contest data
-        const url = "https://kontests.net/api/v1/all";
-        const res = await axios.get(url);
-        
-        // Filter for contests starting in the next 24 hours
-        const now = Date.now();
-        const tmrw = now + (24 * 60 * 60 * 1000);
-        const up = res.data.filter(c => {
-            const start = new Date(c.start_time).getTime();
-            return start > now && start <= tmrw;
-        });
+        // Fetch contest data for next 7 days
+        const up = await getContests(7);
 
         // Send emails if there are contests
         if (up.length > 0) {
             let html = `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #333; text-align: center;">🔥 Upcoming Coding Contests (Next 24h)</h2>
+                <h2 style="color: #333; text-align: center;">🔥 Upcoming Coding Contests (Next 7 Days)</h2>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
                 <ul style="list-style-type: none; padding: 0;">
             `;
@@ -137,6 +182,8 @@ async function runTask() {
 cron.schedule('0 8 * * *', () => {
     console.log("Running scheduled contest check...");
     runTask();
+}, {
+    timezone: "Asia/Kolkata"
 });
 
 app.listen(process.env.PORT || 4000, () => {
